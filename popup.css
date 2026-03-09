@@ -1,6 +1,6 @@
 body {
   font-family: Arial, sans-serif;
-  min-width: 360px;
+  min-width: 300px;
   margin: 0;
 }
 
@@ -9,29 +9,19 @@ main {
 }
 
 h1 {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 18px;
 }
 
-label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 12px;
-}
-
-input,
-select,
 button {
   width: 100%;
-  margin-top: 4px;
   box-sizing: border-box;
-  padding: 8px;
+  padding: 10px;
 }
 
 .buttons {
   display: grid;
   gap: 8px;
-  margin-top: 8px;
 }
 
 .danger {
@@ -41,32 +31,7 @@ button {
 }
 
 #status {
+  margin: 10px 0 0;
   font-size: 12px;
   color: #333;
-}
-
-#count {
-  font-size: 12px;
-  color: #444;
-}
-
-#preview {
-  max-height: 180px;
-  overflow: auto;
-  padding-left: 16px;
-  font-size: 12px;
-}
-
-
-.toggle-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0 4px;
-  font-size: 13px;
-}
-
-.toggle-row input {
-  width: auto;
-  margin: 0;
 }

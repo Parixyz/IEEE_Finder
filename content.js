@@ -13,11 +13,6 @@ function createItem({ text, source }) {
   };
 }
 
-function captureCurrentPageText() {
-  const rawText = document.body?.innerText || "";
-  return createItem({ text: rawText, source: "page" });
-}
-
 function appendTextToPageEnd(text) {
   if (!document.body || !text) return;
 
@@ -57,6 +52,14 @@ function appendTextToPageEnd(text) {
   entry.style.background = "#fff";
   entry.style.border = "1px solid #ddd";
   list.appendChild(entry);
+
+  container.scrollIntoView({ behavior: "smooth", block: "end" });
+  window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+}
+
+function captureCurrentPageText() {
+  const rawText = document.body?.innerText || "";
+  return createItem({ text: rawText, source: "page" });
 }
 
 async function collectAndStore() {
@@ -73,6 +76,17 @@ async function isPasteCaptureEnabled() {
   return Boolean(response?.enabled);
 }
 
+async function storePastedText(rawText) {
+  const item = createItem({ text: rawText, source: "clipboard" });
+  if (!item) return;
+
+  appendTextToPageEnd(item.text);
+
+  chrome.runtime.sendMessage({ type: "ADD_PAGE", pages: [item] }, (result) => {
+    console.info("Clipboard text saved", result);
+  });
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "ADD_CURRENT_PAGE") {
     collectAndStore().then(() => sendResponse({ ok: true }));
@@ -80,7 +94,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 });
 
-document.addEventListener("keydown", (event) => {
+document.addEventListener("keydown", async (event) => {
   const target = event.target;
   const isEditable =
     target instanceof HTMLElement &&
@@ -88,6 +102,21 @@ document.addEventListener("keydown", (event) => {
 
   if (!isEditable && event.key.toLowerCase() === "i") {
     collectAndStore();
+  }
+
+  const isPasteShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v";
+  if (!isPasteShortcut) return;
+
+  const enabled = await isPasteCaptureEnabled();
+  if (!enabled) return;
+
+  if (isEditable) return;
+
+  try {
+    const clipboardText = await navigator.clipboard.readText();
+    await storePastedText(clipboardText);
+  } catch (_error) {
+    // Fallback to paste event handler when clipboard read is restricted.
   }
 });
 
@@ -98,12 +127,5 @@ document.addEventListener("paste", async (event) => {
   if (!enabled) return;
 
   const pastedText = event.clipboardData?.getData("text/plain") || "";
-  const item = createItem({ text: pastedText, source: "clipboard" });
-  if (!item) return;
-
-  appendTextToPageEnd(item.text);
-
-  chrome.runtime.sendMessage({ type: "ADD_PAGE", pages: [item] }, (result) => {
-    console.info("Clipboard text saved", result);
-  });
+  await storePastedText(pastedText);
 });
