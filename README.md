@@ -1,13 +1,16 @@
 # Website Text Saver (Chrome Extension)
 
-A lightweight Google Chrome extension that:
+A lightweight Chrome extension that focuses on 3 actions:
 
-- Saves full visible page text (`document.body.innerText`) from the current website.
-- Optionally captures pasted clipboard text (`Ctrl+V`) when toggle is enabled.
-- Lets you add the current page via button **or by pressing `i`**.
-- Accumulates saved items across your browsing session.
-- Exports saved items as JSON.
-- Resets saved items when needed.
+- **Activate** clipboard capture for `Ctrl+V` / `Cmd+V`.
+- **Export** saved items as JSON.
+- **Reset** saved items.
+
+When capture is active and you paste text on a webpage, the extension:
+
+- stores the pasted text,
+- appends it to the end of the page,
+- and scrolls to the page end.
 
 ## Install locally
 
@@ -20,27 +23,11 @@ A lightweight Google Chrome extension that:
 
 1. Open any normal website page.
 2. Open the extension popup.
-3. (Optional) Enable **Capture clipboard text on Ctrl+V**.
-4. Press `Ctrl+V` on page to save pasted text (and also append it to the end of the current page when toggle is ON), or click **Add this page content (i)** to save full page text.
-5. Repeat on more pages to accumulate.
-6. Click **Export saved pages** to download JSON.
-7. Click **Reset** to clear stored items.
-
-## Export format
-
-Each saved item includes:
-
-- `id`
-- `url`
-- `title`
-- `text`
-- `textLength`
-- `source` (`page` or `clipboard`)
-- `capturedAt`
+3. Click **Activate**.
+4. Press `Ctrl+V` (`Cmd+V` on macOS).
+5. Use **Export** to download JSON or **Reset** to clear saved items.
 
 ## Notes
 
 - Works on most websites.
-- Browser-internal pages like `chrome://` cannot be scraped by extensions.
-- No API key is required.
-- No GPT/API calls are made.
+- Browser-internal pages like `chrome://` cannot be accessed by extensions.
