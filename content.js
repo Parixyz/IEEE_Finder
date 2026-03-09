@@ -100,6 +100,12 @@ async function storePastedText(rawText) {
   });
 }
 
+async function handlePasteText(rawText) {
+  const enabled = await isPasteCaptureEnabled();
+  if (!enabled) return;
+  await storePastedText(rawText);
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "ADD_CURRENT_PAGE") {
     collectAndStore().then(() => sendResponse({ ok: true }));
@@ -107,36 +113,37 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 });
 
-document.addEventListener("keydown", async (event) => {
-  const target = event.target;
-  const isEditable =
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+document.addEventListener(
+  "keydown",
+  async (event) => {
+    const target = event.target;
+    const isEditable =
+      target instanceof HTMLElement &&
+      (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 
-  if (!isEditable && event.key.toLowerCase() === "i") {
-    collectAndStore();
-  }
+    if (!isEditable && event.key.toLowerCase() === "i") {
+      collectAndStore();
+    }
 
-  const isPasteShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v";
-  if (!isPasteShortcut) return;
+    const isPasteShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v";
+    if (!isPasteShortcut) return;
 
-  const enabled = await isPasteCaptureEnabled();
-  if (!enabled) return;
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      await handlePasteText(clipboardText);
+    } catch (_error) {
+      // If clipboard API is blocked, capture-phase paste handler still handles many sites.
+    }
+  },
+  true
+);
 
-  try {
-    const clipboardText = await navigator.clipboard.readText();
-    await storePastedText(clipboardText);
-  } catch (_error) {
-    // If clipboard API is unavailable in this context, paste event handler below still handles many pages.
-  }
-});
-
-document.addEventListener("paste", async (event) => {
-  if (!(event instanceof ClipboardEvent)) return;
-
-  const enabled = await isPasteCaptureEnabled();
-  if (!enabled) return;
-
-  const pastedText = event.clipboardData?.getData("text/plain") || "";
-  await storePastedText(pastedText);
-});
+document.addEventListener(
+  "paste",
+  async (event) => {
+    if (!(event instanceof ClipboardEvent)) return;
+    const pastedText = event.clipboardData?.getData("text/plain") || "";
+    await handlePasteText(pastedText);
+  },
+  true
+);
