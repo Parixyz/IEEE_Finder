@@ -24,7 +24,7 @@ async function addCurrentPage() {
 
   chrome.tabs.sendMessage(tab.id, { type: "ADD_CURRENT_PAGE" }, async (response) => {
     if (chrome.runtime.lastError) {
-      setStatus("Open an IEEE Xplore page first.");
+      setStatus("Open a normal website page first (chrome:// pages are blocked).");
       return;
     }
 
