@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "IEEE Finder Exporter",
+  "description": "Capture IEEE Xplore search results, enrich with GPT, accumulate, export, and reset.",
+  "version": "1.0.0",
+  "permissions": ["storage", "activeTab", "scripting", "downloads"],
+  "host_permissions": [
+    "*://*.ieeexplore.ieee.org/*",
+    "https://api.openai.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "IEEE Finder Exporter"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.ieeexplore.ieee.org/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
