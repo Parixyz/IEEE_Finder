@@ -13,6 +13,19 @@ function createItem({ text, source }) {
   };
 }
 
+let lastCapturedText = "";
+let lastCapturedAt = 0;
+
+function isDuplicatePaste(text) {
+  const now = Date.now();
+  const isDuplicate = text === lastCapturedText && now - lastCapturedAt < 1500;
+  if (!isDuplicate) {
+    lastCapturedText = text;
+    lastCapturedAt = now;
+  }
+  return isDuplicate;
+}
+
 function appendTextToPageEnd(text) {
   if (!document.body || !text) return;
 
@@ -78,7 +91,7 @@ async function isPasteCaptureEnabled() {
 
 async function storePastedText(rawText) {
   const item = createItem({ text: rawText, source: "clipboard" });
-  if (!item) return;
+  if (!item || isDuplicatePaste(item.text)) return;
 
   appendTextToPageEnd(item.text);
 
@@ -110,13 +123,11 @@ document.addEventListener("keydown", async (event) => {
   const enabled = await isPasteCaptureEnabled();
   if (!enabled) return;
 
-  if (isEditable) return;
-
   try {
     const clipboardText = await navigator.clipboard.readText();
     await storePastedText(clipboardText);
   } catch (_error) {
-    // Fallback to paste event handler when clipboard read is restricted.
+    // If clipboard API is unavailable in this context, paste event handler below still handles many pages.
   }
 });
 
