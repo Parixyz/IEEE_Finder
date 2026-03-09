@@ -1,12 +1,13 @@
-# IEEE Page Text Saver (Chrome Extension)
+# Website Text Saver (Chrome Extension)
 
-A lightweight Google Chrome extension for IEEE Xplore pages that:
+A lightweight Google Chrome extension that:
 
-- Saves full visible page text (`document.body.innerText`) from the current IEEE page.
+- Saves full visible page text (`document.body.innerText`) from the current website.
+- Optionally captures pasted clipboard text (`Ctrl+V`) when toggle is enabled.
 - Lets you add the current page via button **or by pressing `i`**.
-- Accumulates saved pages across your browsing session.
-- Exports saved pages as JSON.
-- Resets saved pages when needed.
+- Accumulates saved items across your browsing session.
+- Exports saved items as JSON.
+- Resets saved items when needed.
 
 ## Install locally
 
@@ -17,25 +18,29 @@ A lightweight Google Chrome extension for IEEE Xplore pages that:
 
 ## Usage
 
-1. Open any IEEE Xplore page (`ieeexplore.ieee.org`).
+1. Open any normal website page.
 2. Open the extension popup.
-3. Click **Add this page content (i)** or press `i` on the page.
-4. Repeat on more pages to accumulate.
-5. Click **Export saved pages** to download JSON.
-6. Click **Reset** to clear stored pages.
+3. (Optional) Enable **Capture clipboard text on Ctrl+V**.
+4. Press `Ctrl+V` on page to save pasted text, or click **Add this page content (i)** to save full page text.
+5. Repeat on more pages to accumulate.
+6. Click **Export saved pages** to download JSON.
+7. Click **Reset** to clear stored items.
 
 ## Export format
 
 Each saved item includes:
 
+- `id`
 - `url`
 - `title`
 - `text`
 - `textLength`
+- `source` (`page` or `clipboard`)
 - `capturedAt`
 
 ## Notes
 
+- Works on most websites.
+- Browser-internal pages like `chrome://` cannot be scraped by extensions.
 - No API key is required.
 - No GPT/API calls are made.
-- Deduplication is by page URL (new capture updates existing URL entry).
