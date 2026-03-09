@@ -21,7 +21,7 @@ A lightweight Google Chrome extension that:
 1. Open any normal website page.
 2. Open the extension popup.
 3. (Optional) Enable **Capture clipboard text on Ctrl+V**.
-4. Press `Ctrl+V` on page to save pasted text, or click **Add this page content (i)** to save full page text.
+4. Press `Ctrl+V` on page to save pasted text (and also append it to the end of the current page when toggle is ON), or click **Add this page content (i)** to save full page text.
 5. Repeat on more pages to accumulate.
 6. Click **Export saved pages** to download JSON.
 7. Click **Reset** to clear stored items.

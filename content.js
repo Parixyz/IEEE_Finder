@@ -18,6 +18,47 @@ function captureCurrentPageText() {
   return createItem({ text: rawText, source: "page" });
 }
 
+function appendTextToPageEnd(text) {
+  if (!document.body || !text) return;
+
+  const containerId = "website-text-saver-paste-output";
+  let container = document.getElementById(containerId);
+
+  if (!container) {
+    container = document.createElement("section");
+    container.id = containerId;
+    container.style.margin = "24px 0";
+    container.style.padding = "16px";
+    container.style.borderTop = "2px dashed #8a8a8a";
+    container.style.background = "#f7f7f7";
+
+    const heading = document.createElement("h2");
+    heading.textContent = "Pasted text (Website Text Saver)";
+    heading.style.fontSize = "16px";
+    heading.style.margin = "0 0 12px";
+    container.appendChild(heading);
+
+    const list = document.createElement("div");
+    list.id = `${containerId}-list`;
+    container.appendChild(list);
+
+    document.body.appendChild(container);
+  }
+
+  const list = document.getElementById(`${containerId}-list`);
+  if (!list) return;
+
+  const entry = document.createElement("pre");
+  entry.textContent = text;
+  entry.style.whiteSpace = "pre-wrap";
+  entry.style.wordBreak = "break-word";
+  entry.style.padding = "10px";
+  entry.style.margin = "0 0 8px";
+  entry.style.background = "#fff";
+  entry.style.border = "1px solid #ddd";
+  list.appendChild(entry);
+}
+
 async function collectAndStore() {
   const item = captureCurrentPageText();
   if (!item) return;
@@ -59,6 +100,8 @@ document.addEventListener("paste", async (event) => {
   const pastedText = event.clipboardData?.getData("text/plain") || "";
   const item = createItem({ text: pastedText, source: "clipboard" });
   if (!item) return;
+
+  appendTextToPageEnd(item.text);
 
   chrome.runtime.sendMessage({ type: "ADD_PAGE", pages: [item] }, (result) => {
     console.info("Clipboard text saved", result);
