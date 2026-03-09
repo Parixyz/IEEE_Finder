@@ -2,28 +2,16 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>IEEE Finder Exporter</title>
+    <title>IEEE Page Text Saver</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <main>
-      <h1>IEEE Finder</h1>
-      <label>
-        OpenAI API Key
-        <input id="apiKey" type="password" placeholder="sk-..." />
-      </label>
-
-      <label>
-        Mode
-        <select id="mode">
-          <option value="basic">Basic parse</option>
-          <option value="gpt">GPT enrichment</option>
-        </select>
-      </label>
+      <h1>IEEE Text Saver</h1>
 
       <div class="buttons">
         <button id="addPage">Add this page content (i)</button>
-        <button id="exportList">Export articles list</button>
+        <button id="exportList">Export saved pages</button>
         <button id="resetList" class="danger">Reset</button>
       </div>
 

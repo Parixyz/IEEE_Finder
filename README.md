@@ -1,13 +1,12 @@
-# IEEE Finder Exporter (Chrome Extension)
+# IEEE Page Text Saver (Chrome Extension)
 
 A lightweight Google Chrome extension for IEEE Xplore pages that:
 
-- Reads article links/content from the current IEEE search/results page.
+- Saves full visible page text (`document.body.innerText`) from the current IEEE page.
 - Lets you add the current page via button **or by pressing `i`**.
-- Accumulates captured results across pages.
-- Exports the accumulated list as JSON.
-- Resets the list when needed.
-- Optionally enriches metadata with GPT (requires your OpenAI API key).
+- Accumulates saved pages across your browsing session.
+- Exports saved pages as JSON.
+- Resets saved pages when needed.
 
 ## Install locally
 
@@ -18,19 +17,25 @@ A lightweight Google Chrome extension for IEEE Xplore pages that:
 
 ## Usage
 
-1. Open an IEEE Xplore results page (`ieeexplore.ieee.org`).
+1. Open any IEEE Xplore page (`ieeexplore.ieee.org`).
 2. Open the extension popup.
-3. Optionally set:
-   - **API key**
-   - **Mode**:
-     - `Basic parse` (local parsing only)
-     - `GPT enrichment` (calls OpenAI Responses API)
-4. Click **Add this page content (i)** or press `i` on the page.
-5. Repeat on more pages to accumulate.
-6. Click **Export articles list** to download JSON.
-7. Click **Reset** to clear stored articles.
+3. Click **Add this page content (i)** or press `i` on the page.
+4. Repeat on more pages to accumulate.
+5. Click **Export saved pages** to download JSON.
+6. Click **Reset** to clear stored pages.
+
+## Export format
+
+Each saved item includes:
+
+- `url`
+- `title`
+- `text`
+- `textLength`
+- `capturedAt`
 
 ## Notes
 
-- Deduplication is based on article URL.
-- GPT mode falls back to local data if enrichment fails.
+- No API key is required.
+- No GPT/API calls are made.
+- Deduplication is by page URL (new capture updates existing URL entry).
