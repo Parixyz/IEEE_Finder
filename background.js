@@ -1,4 +1,5 @@
 const STORAGE_KEY = "pages";
+const PASTE_CAPTURE_KEY = "pasteCaptureEnabled";
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "ADD_PAGE") {
@@ -20,6 +21,20 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  if (message?.type === "GET_PASTE_CAPTURE") {
+    chrome.storage.local.get([PASTE_CAPTURE_KEY], (data) => {
+      sendResponse({ enabled: Boolean(data[PASTE_CAPTURE_KEY]) });
+    });
+    return true;
+  }
+
+  if (message?.type === "SET_PASTE_CAPTURE") {
+    chrome.storage.local.set({ [PASTE_CAPTURE_KEY]: Boolean(message.enabled) }, () => {
+      sendResponse({ ok: true, enabled: Boolean(message.enabled) });
+    });
+    return true;
+  }
+
   if (message?.type === "EXPORT_PAGES") {
     exportPages().then(sendResponse);
     return true;
@@ -30,19 +45,21 @@ async function addPages(newPages) {
   const data = await chrome.storage.local.get([STORAGE_KEY]);
   const current = data[STORAGE_KEY] || [];
 
-  const byUrl = new Map(current.map((item) => [item.url, item]));
-  for (const page of newPages) {
-    if (!page?.url) continue;
-    byUrl.set(page.url, {
-      ...byUrl.get(page.url),
-      ...page,
+  const normalized = newPages
+    .filter((page) => page?.text)
+    .map((page) => ({
+      id: page.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      url: page.url || "",
+      title: page.title || page.url || "Clipboard Item",
+      text: page.text,
+      textLength: page.textLength || page.text.length,
+      source: page.source || "page",
       capturedAt: page.capturedAt || new Date().toISOString()
-    });
-  }
+    }));
 
-  const merged = Array.from(byUrl.values());
+  const merged = current.concat(normalized);
   await chrome.storage.local.set({ [STORAGE_KEY]: merged });
-  return { ok: true, added: newPages.length, total: merged.length };
+  return { ok: true, added: normalized.length, total: merged.length };
 }
 
 async function exportPages() {
@@ -53,7 +70,7 @@ async function exportPages() {
   });
   const url = URL.createObjectURL(blob);
 
-  const filename = `ieee-pages-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+  const filename = `website-text-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
 
   await chrome.downloads.download({
     url,
