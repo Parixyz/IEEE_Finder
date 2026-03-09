@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>IEEE Finder Exporter</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <h1>IEEE Finder</h1>
+      <label>
+        OpenAI API Key
+        <input id="apiKey" type="password" placeholder="sk-..." />
+      </label>
+
+      <label>
+        Mode
+        <select id="mode">
+          <option value="basic">Basic parse</option>
+          <option value="gpt">GPT enrichment</option>
+        </select>
+      </label>
+
+      <div class="buttons">
+        <button id="addPage">Add this page content (i)</button>
+        <button id="exportList">Export articles list</button>
+        <button id="resetList" class="danger">Reset</button>
+      </div>
+
+      <p id="status"></p>
+      <p id="count"></p>
+      <ul id="preview"></ul>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
