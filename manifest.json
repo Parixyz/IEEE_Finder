@@ -1,20 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "IEEE Page Text Saver",
-  "description": "Save full text content from IEEE Xplore pages, accumulate, export, and reset.",
-  "version": "1.1.0",
+  "name": "Website Text Saver",
+  "description": "Save full text content from websites, accumulate, export, and reset.",
+  "version": "1.2.0",
   "permissions": ["storage", "activeTab", "downloads"],
-  "host_permissions": ["*://*.ieeexplore.ieee.org/*"],
+  "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "IEEE Page Text Saver"
+    "default_title": "Website Text Saver"
   },
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["*://*.ieeexplore.ieee.org/*"],
+      "matches": ["<all_urls>"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
