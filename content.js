@@ -1,139 +1,58 @@
-function createItem({ text, source }) {
-  const cleaned = (text || "").replace(/\s+\n/g, "\n").trim();
-  if (!cleaned) return null;
+function appendTextToPage(text) {
+  if (!text || !document.body) return;
 
-  return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    url: location.href,
-    title: document.title || location.href,
-    text: cleaned,
-    textLength: cleaned.length,
-    source,
-    capturedAt: new Date().toISOString()
-  };
-}
-
-let lastCapturedText = "";
-let lastCapturedAt = 0;
-
-function isDuplicatePaste(text) {
-  const now = Date.now();
-  const isDuplicate = text === lastCapturedText && now - lastCapturedAt < 1500;
-  if (!isDuplicate) {
-    lastCapturedText = text;
-    lastCapturedAt = now;
-  }
-  return isDuplicate;
-}
-
-function appendTextToPageEnd(text) {
-  if (!document.body || !text) return;
-
-  const containerId = "website-text-saver-paste-output";
+  const containerId = "ieee-finder-paste-log";
   let container = document.getElementById(containerId);
 
   if (!container) {
     container = document.createElement("section");
     container.id = containerId;
     container.style.margin = "24px 0";
-    container.style.padding = "16px";
-    container.style.borderTop = "2px dashed #8a8a8a";
+    container.style.padding = "12px";
+    container.style.borderTop = "2px dashed #888";
     container.style.background = "#f7f7f7";
 
-    const heading = document.createElement("h2");
-    heading.textContent = "Pasted text (Website Text Saver)";
-    heading.style.fontSize = "16px";
-    heading.style.margin = "0 0 12px";
-    container.appendChild(heading);
+    const title = document.createElement("h2");
+    title.textContent = "Accumulated pasted text";
+    title.style.margin = "0 0 8px";
+    title.style.fontSize = "16px";
+    container.appendChild(title);
 
-    const list = document.createElement("div");
-    list.id = `${containerId}-list`;
-    container.appendChild(list);
+    const output = document.createElement("pre");
+    output.id = `${containerId}-output`;
+    output.style.whiteSpace = "pre-wrap";
+    output.style.wordBreak = "break-word";
+    output.style.background = "#fff";
+    output.style.padding = "10px";
+    output.style.border = "1px solid #ddd";
+    output.style.margin = "0";
+    container.appendChild(output);
 
     document.body.appendChild(container);
   }
 
-  const list = document.getElementById(`${containerId}-list`);
-  if (!list) return;
-
-  const entry = document.createElement("pre");
-  entry.textContent = text;
-  entry.style.whiteSpace = "pre-wrap";
-  entry.style.wordBreak = "break-word";
-  entry.style.padding = "10px";
-  entry.style.margin = "0 0 8px";
-  entry.style.background = "#fff";
-  entry.style.border = "1px solid #ddd";
-  list.appendChild(entry);
+  const output = document.getElementById(`${containerId}-output`);
+  if (!output) return;
+  output.textContent = output.textContent ? `${output.textContent}\n${text}` : text;
 
   container.scrollIntoView({ behavior: "smooth", block: "end" });
-  window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
 }
 
-function captureCurrentPageText() {
-  const rawText = document.body?.innerText || "";
-  return createItem({ text: rawText, source: "page" });
+async function storePaste(text) {
+  const cleaned = (text || "").trim();
+  if (!cleaned) return;
+
+  appendTextToPage(cleaned);
+  chrome.runtime.sendMessage({ type: "APPEND_TEXT", text: cleaned });
 }
-
-async function collectAndStore() {
-  const item = captureCurrentPageText();
-  if (!item) return;
-
-  chrome.runtime.sendMessage({ type: "ADD_PAGE", pages: [item] }, (result) => {
-    console.info("Page text saved", result);
-  });
-}
-
-async function isPasteCaptureEnabled() {
-  const response = await chrome.runtime.sendMessage({ type: "GET_PASTE_CAPTURE" });
-  return Boolean(response?.enabled);
-}
-
-async function storePastedText(rawText) {
-  const item = createItem({ text: rawText, source: "clipboard" });
-  if (!item || isDuplicatePaste(item.text)) return;
-
-  appendTextToPageEnd(item.text);
-
-  chrome.runtime.sendMessage({ type: "ADD_PAGE", pages: [item] }, (result) => {
-    console.info("Clipboard text saved", result);
-  });
-}
-
-async function handlePasteText(rawText) {
-  const enabled = await isPasteCaptureEnabled();
-  if (!enabled) return;
-  await storePastedText(rawText);
-}
-
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === "ADD_CURRENT_PAGE") {
-    collectAndStore().then(() => sendResponse({ ok: true }));
-    return true;
-  }
-});
 
 document.addEventListener(
   "keydown",
-  async (event) => {
-    const target = event.target;
-    const isEditable =
-      target instanceof HTMLElement &&
-      (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
-
-    if (!isEditable && event.key.toLowerCase() === "i") {
-      collectAndStore();
-    }
-
+  (event) => {
     const isPasteShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v";
     if (!isPasteShortcut) return;
 
-    try {
-      const clipboardText = await navigator.clipboard.readText();
-      await handlePasteText(clipboardText);
-    } catch (_error) {
-      // If clipboard API is blocked, capture-phase paste handler still handles many sites.
-    }
+    chrome.runtime.sendMessage({ type: "PASTE_SHORTCUT_DETECTED" });
   },
   true
 );
@@ -142,8 +61,8 @@ document.addEventListener(
   "paste",
   async (event) => {
     if (!(event instanceof ClipboardEvent)) return;
-    const pastedText = event.clipboardData?.getData("text/plain") || "";
-    await handlePasteText(pastedText);
+    const text = event.clipboardData?.getData("text/plain") || "";
+    await storePaste(text);
   },
   true
 );

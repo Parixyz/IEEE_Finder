@@ -1,83 +1,82 @@
-const STORAGE_KEY = "pages";
-const PASTE_CAPTURE_KEY = "pasteCaptureEnabled";
+const STORAGE_KEY = "accumulatedText";
+const LAST_EVENT_KEY = "lastEvent";
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.set({ [STORAGE_KEY]: "", [LAST_EVENT_KEY]: "Ready" });
+});
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === "ADD_PAGE") {
-    addPages(message.pages || []).then((result) => sendResponse(result));
+  if (message?.type === "APPEND_TEXT") {
+    appendText(message.text || "").then(sendResponse);
     return true;
   }
 
-  if (message?.type === "GET_PAGES") {
-    chrome.storage.local.get([STORAGE_KEY], (data) => {
-      sendResponse({ pages: data[STORAGE_KEY] || [] });
+  if (message?.type === "PASTE_SHORTCUT_DETECTED") {
+    chrome.storage.local.set({ [LAST_EVENT_KEY]: "Ctrl/Cmd+V detected. Waiting for pasted text..." });
+    sendResponse({ ok: true });
+    return;
+  }
+
+  if (message?.type === "GET_STATE") {
+    chrome.storage.local.get([STORAGE_KEY, LAST_EVENT_KEY], (data) => {
+      const text = data[STORAGE_KEY] || "";
+      sendResponse({
+        text,
+        length: text.length,
+        lastEvent: data[LAST_EVENT_KEY] || "Ready"
+      });
     });
     return true;
   }
 
-  if (message?.type === "RESET_PAGES") {
-    chrome.storage.local.set({ [STORAGE_KEY]: [] }, () => {
-      sendResponse({ ok: true });
-    });
+  if (message?.type === "RESET_TEXT") {
+    chrome.storage.local.set(
+      { [STORAGE_KEY]: "", [LAST_EVENT_KEY]: "Reset complete. Accumulated text cleared." },
+      () => sendResponse({ ok: true })
+    );
     return true;
   }
 
-  if (message?.type === "GET_PASTE_CAPTURE") {
-    chrome.storage.local.get([PASTE_CAPTURE_KEY], (data) => {
-      sendResponse({ enabled: Boolean(data[PASTE_CAPTURE_KEY]) });
-    });
-    return true;
-  }
-
-  if (message?.type === "SET_PASTE_CAPTURE") {
-    chrome.storage.local.set({ [PASTE_CAPTURE_KEY]: Boolean(message.enabled) }, () => {
-      sendResponse({ ok: true, enabled: Boolean(message.enabled) });
-    });
-    return true;
-  }
-
-  if (message?.type === "EXPORT_PAGES") {
-    exportPages().then(sendResponse);
+  if (message?.type === "EXPORT_TEXT") {
+    exportText().then(sendResponse);
     return true;
   }
 });
 
-async function addPages(newPages) {
+async function appendText(newText) {
+  const cleaned = (newText || "").trim();
+  if (!cleaned) return { ok: false };
+
   const data = await chrome.storage.local.get([STORAGE_KEY]);
-  const current = data[STORAGE_KEY] || [];
+  const current = data[STORAGE_KEY] || "";
+  const updated = current ? `${current}\n${cleaned}` : cleaned;
 
-  const normalized = newPages
-    .filter((page) => page?.text)
-    .map((page) => ({
-      id: page.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      url: page.url || "",
-      title: page.title || page.url || "Clipboard Item",
-      text: page.text,
-      textLength: page.textLength || page.text.length,
-      source: page.source || "page",
-      capturedAt: page.capturedAt || new Date().toISOString()
-    }));
+  await chrome.storage.local.set({
+    [STORAGE_KEY]: updated,
+    [LAST_EVENT_KEY]: `Ctrl/Cmd+V detected. Appended ${cleaned.length} chars.`
+  });
 
-  const merged = current.concat(normalized);
-  await chrome.storage.local.set({ [STORAGE_KEY]: merged });
-  return { ok: true, added: normalized.length, total: merged.length };
+  return { ok: true, length: updated.length };
 }
 
-async function exportPages() {
+async function exportText() {
   const data = await chrome.storage.local.get([STORAGE_KEY]);
-  const pages = data[STORAGE_KEY] || [];
-  const blob = new Blob([JSON.stringify(pages, null, 2)], {
-    type: "application/json"
-  });
-  const url = URL.createObjectURL(blob);
+  const text = data[STORAGE_KEY] || "";
 
-  const filename = `website-text-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
 
   await chrome.downloads.download({
     url,
-    filename,
+    filename: `accumulated-paste-${new Date().toISOString().replace(/[:.]/g, "-")}.txt`,
     saveAs: true
   });
 
   setTimeout(() => URL.revokeObjectURL(url), 2000);
-  return { ok: true, count: pages.length };
+
+  await chrome.storage.local.set({
+    [LAST_EVENT_KEY]: `Exported ${text.length} characters.`
+  });
+
+  return { ok: true, length: text.length };
 }
